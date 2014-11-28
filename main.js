@@ -5,9 +5,7 @@ var math = require('mathjs');
 
 var apiEndpoint = "https://api.xively.com/v2/"
 var feed_id = 59871;
-var stream_id = 1; // active-clients
-
-
+var stream_id =1; // active-clients
 
 var options = {
 	json: true,
@@ -21,23 +19,27 @@ var m1 = moment().startOf("month").subtract(2, 'month');
 var m2 = moment().startOf("month").subtract(1, 'month');
 
 values = []
-values[m1.month()] = []
-values[m2.month()] = []
 
-request.get(apiEndpoint + "/feeds/" + feed_id + '/datastreams/' + stream_id + '.json?duration=90days&interval=86400', options, function(error, response, body) {
+request.get(apiEndpoint + "/feeds/" + feed_id + '/datastreams/' + stream_id + '.json?duration=100days&interval=86400&limit=100', options, function(error, response, body) {
 	if (!error) {
 		body.datapoints.forEach(function(datapoint) {
-			var m = moment(datapoint.at);
-			if (typeof values[m.month()] === 'undefined') return;
-			values[m.month()].push(parseInt(datapoint.value))
+			var m = moment(datapoint.at).endOf("month").format("YYYY-MM-DD")
+			if (typeof values[m] === 'undefined') {
+				values[m] = []
+			}
+			values[m].push(parseInt(datapoint.value))
 		});
 
 		console.log('\n---------------')
 		console.log('Mosquitto stats')
 		console.log('--------------- \n')
 
-		console.log(m1.format(' - MMMM:\t'), math.median(values[m1.month()]))
-		console.log(m2.format(' - MMMM:\t'), math.median(values[m2.month()]))
+		for (var v in values) {
+			console.log(moment(v).format(' - YYYY MMMM:\t'), math.median(values[v]))
+		}
+
+	} else {
+		console.log(error)
 	}
 });
 
